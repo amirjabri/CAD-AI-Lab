@@ -1,11 +1,8 @@
 # 4um Impactor Design
 
-Parametric CAD design for a 4µm aerodynamic impactor using `build123d`.
+Parametric CAD design AI based
 
-## Features
-- **Standard 37mm Cassette Compatibility**: Drops into standard sampling cassette bottoms.
-- **Anti-Spill Cup**: "Lobster pot" design prevents powder loss if tipped.
-- **Parametric Physics**: Automatically calculates nozzle diameter based on target cut-point (4µm) and flow rate (4 LPM).
+## Featur
 
 ## Usage
 1. Install dependencies:
@@ -14,7 +11,7 @@ Parametric CAD design for a 4µm aerodynamic impactor using `build123d`.
    ```
 2. Run the design script:
    ```bash
-   python design_4um_impactor.py
+   
    ```
 3. View in **OCP CAD Viewer** (VS Code Extension).
 
