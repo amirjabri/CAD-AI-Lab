@@ -1,6 +1,7 @@
 
 from build123d import *
-from ocp_vscode import show, set_port, Camera, set_defaults
+from viewer_setup import setup_ocp, show
+from ocp_vscode import Camera
 import math
 
 # --- CONFIGURATION ---
@@ -218,8 +219,7 @@ def export_batch():
 
 if __name__ == "__main__":
     try:
-        from ocp_vscode import set_port
-        set_port(3939)
+        setup_ocp()
         # Show one example (2.0 LPM)
         b = generate_body(5.0)
         c = generate_cover()
