@@ -13,17 +13,17 @@ FIT_SOCKET_ID = 37.2
 FIT_SOCKET_DEPTH = 5.0
 RING_OD = 42.0 
 WALL = 2.0
-SECTION_HEIGHT = 20.0
+SECTION_HEIGHT = 15.0 # Reduced from 20.0
 INTERFACE_HEIGHT = 5.0
 
 # Base Geometry (Common)
-CUP_FLOOR_Z = 5.0
+CUP_FLOOR_Z = 2.0 # Lowered from 5.0 to sit on flange
 CUP_RIM_HEIGHT = 8.0 
 CUP_RIM_Z = CUP_FLOOR_Z + CUP_RIM_HEIGHT 
-GUARD_ID = 9.0 
+GUARD_ID = 6.0 # Reduced from 9.0 for small nozzle
 GUARD_HEIGHT = 2.0 
 GUARD_Z_BOTTOM = CUP_RIM_Z - GUARD_HEIGHT
-CUP_INNER_DIAM = 20.0 
+CUP_INNER_DIAM = 12.0 # Reduced from 20.0 (Mini Cup) 
 
 def calculate_physics(flow_lpm):
     # Physics Calculation
