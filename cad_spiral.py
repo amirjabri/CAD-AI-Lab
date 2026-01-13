@@ -101,83 +101,50 @@ def generate_cover():
         extrude(amount=cover_thickness, mode=Mode.SUBTRACT)
     return cover.part
 
-def generate_base():
-    # v33: Compact 8mm Height -> v55: 13.0mm Height for 1/4" Barb
-    base_height = 13.0
+    # v55 Refactor: Central Axial Barb (Downward)
+    base_height = 10.0 # Reduced from 13, slightly taller than 8 for stability
     socket_depth = 5.0
-    seat_z = base_height - socket_depth # Z = 3.0
+    seat_z = base_height - socket_depth # Z = 5.0
     fit_socket_cleaning = FIT_BOSS_OD/2 + 0.1 
     plenum_cleaning = 34.0/2 
+
+    # Barb Dims
+    barb_od_r = 6.5 / 2
+    barb_id_r = 4.0 / 2
+    barb_len = 8.0 # Standard length
 
     with BuildPart() as base:
         # 1. Main Block
         Cylinder(radius=RING_OD/2, height=base_height, align=(Align.CENTER, Align.CENTER, Align.MIN))
         
-        # 2. Add Manifold Solid (The "Half Cylinder" Spine)
-        # Starts at Center (X=0) and goes Out.
-        # Intersects with Main Block.
-        # Will be carved out by Socket/Plenum cuts later.
-        
-        barb_flow_z = (seat_z + 1.0) / 2 # Z = 2.0 -> Z = 4.5
-        # v55: 1/4" Barb (6.5mm OD)
-        barb_od_r = 6.5 / 2 # 3.25mm
-        barb_id_r = 4.0 / 2 # 2.0mm (ID 4mm)
-        
-        with BuildSketch(Plane.YZ): # X=0 Plane
-            with Locations((0, barb_flow_z)):
-                Circle(radius=barb_od_r)
-            # Cut off bottom (Below Z=0)
-            with Locations((0, -5.0)):
-                Rectangle(width=barb_od_r*3, height=10.0, mode=Mode.SUBTRACT)
-        
-        # Extrude from Center to Outside (RING_OD/2 + 5.0)
-        extrude(amount=RING_OD/2 + 5.0 + 2.0)
-        
-        # 3. Cut Top Socket (Receiver)
+        # 2. Cut Top Socket (Receiver)
         with BuildSketch(Plane.XY.offset(base_height)):
             Circle(radius=fit_socket_cleaning)
         extrude(amount=-socket_depth, mode=Mode.SUBTRACT)
         
-        # 4. Cut Lower Plenum (Collector)
+        # 3. Cut Lower Plenum (Collector)
         with BuildSketch(Plane.XY.offset(seat_z)):
             Circle(radius=plenum_cleaning)
         extrude(amount=-(seat_z - 1.0), mode=Mode.SUBTRACT)
         
-        # 4b. Vortex Cone (v34 Improvement)
-        # Sits on the floor (Z=1.0) to smooth airflow transition.
-        # Height 2.0 goes up to Seat level (Z=3.0).
-        Cone(bottom_radius=4.0, top_radius=0.0, height=2.0, 
-             align=(Align.CENTER, Align.CENTER, Align.MIN)).move(Location((0,0,1.0)))
+        # 4. Add Central Barb (Downward)
+        with BuildSketch(Plane.XY):
+            Circle(radius=barb_od_r)
+        extrude(amount=-barb_len, dir=(0,0,-1)) # Extrude downwards
         
-        # 5. Add Ribs
+        # 5. Barb Bore (Through Hole to Plenum)
+        # From Z=1.0 (Plenum Floor) down through Barb
+        with BuildSketch(Plane.XY.offset(1.0)):
+            Circle(radius=barb_id_r)
+        extrude(amount=-(1.0 + barb_len), mode=Mode.SUBTRACT)
+        
+        # 6. Add Ribs (Support Grid)
+        # Must avoid the central hole
         with BuildSketch(Plane.XY.offset(1.0)):
             Rectangle(width=plenum_cleaning*2, height=1.0)
             Rectangle(width=1.0, height=plenum_cleaning*2)
+            Circle(radius=barb_id_r + 0.5, mode=Mode.SUBTRACT) # Clear barb hole
         extrude(amount=(seat_z - 1.0))
-        
-        # 6. Barb Tip (The Round End)
-        with BuildSketch(Plane.YZ.offset(RING_OD/2 + 5.0)):
-            Circle(radius=barb_od_r)
-        extrude(amount=BARB_HEIGHT).move(Location((0,0,barb_flow_z)))
-        
-        # 7. Barb Bore (Hole)
-        with BuildSketch(Plane.YZ.offset(RING_OD/2 + 5.0 + BARB_HEIGHT)):
-            Circle(radius=barb_id_r)
-        extrude(amount=-(BARB_HEIGHT), mode=Mode.SUBTRACT).move(Location((0,0,barb_flow_z)))
-        
-        # 8. Internal Slot Cut
-        # Cut the slot from the outside in, through the spine.
-        # Stop at some point? Or cut through to center?
-        # Let's cut into the plenum. Center is X=0.
-        # Plenum R = 17. The Slot stops at X=0?
-        # The Plenum Cut (Step 4) already hollows out the spine for R<17.
-        # We just need to connect the Barb Bore to the Plenum.
-        # The Bore is at X ~ 26.
-        # We need a cut from X=26 inward to X=17 (Plenum wall).
-        # We need a cut from X=26 inward to X=17 (Plenum wall).
-        with BuildSketch(Plane.YZ.offset(RING_OD/2 + 5.0)):
-             Rectangle(width=barb_id_r * 2, height=seat_z - 1.0 - 0.4)
-        extrude(amount=-(5.0 + 2.0 + RING_OD/2), mode=Mode.SUBTRACT).move(Location((0,0,barb_flow_z)))
         
     return base.part
 
