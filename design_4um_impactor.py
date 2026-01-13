@@ -198,13 +198,22 @@ with BuildPart() as middle_section:
     # Rim is close to air path. Body is better.
     # Let's attach at Z = CUP_FLOOR_Z + 4.0 (Mid-cup)
     SPOKE_Z = CUP_FLOOR_Z + 4.0
+
+    # Calculate Gap
+    # Ring Inner Radius = RING_OD/2 - WALL = 21 - 2 = 19mm
+    # Cup Outer Radius = CUP_INNER_DIAM/2 + 1.0 = 10 + 1 = 11mm
+    # Gap = 19 - 11 = 8mm
+    # Center of Gap = CupOuter + Gap/2 = 11 + 4 = 15mm
+    
+    GAP_START = CUP_INNER_DIAM/2 + 1.0 # 11mm
+    GAP_END = RING_OD/2 - WALL # 19mm
+    GAP_WIDTH = GAP_END - GAP_START # 8mm
+    GAP_CENTER = GAP_START + GAP_WIDTH/2
+    
     with BuildSketch(Plane.XY.offset(SPOKE_Z)) as spoke_sk:
-        with PolarLocations(radius=(RING_OD/2)/2 + (CUP_INNER_DIAM/2)/2, count=3):
-            # Rectangle spanning gap
-            # Gap center is radius above.
-            # Width = (RING_ID - CUP_OD)
-            # Just make a long rectangle and intersect or let it merge
-            Rectangle(width=RING_OD/2, height=2.0)
+        with PolarLocations(radius=GAP_CENTER, count=3):
+            # Rectangle spanning the exact gap with slight overlap
+            Rectangle(width=GAP_WIDTH + 1.0, height=2.0)
     extrude(amount=2.0) # Thickness of spoke
 
 # --- EXPORT ---
