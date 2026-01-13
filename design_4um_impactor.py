@@ -51,10 +51,18 @@ def generate_middle_holder():
             Circle(radius=RING_OD/2); Circle(radius=RING_OD/2 - WALL, mode=Mode.SUBTRACT)
         extrude(amount=SECTION_HEIGHT)
         
+        # 2. Bottom Boss (Interface)
         with BuildSketch(Plane.XY.offset(-INTERFACE_HEIGHT)):
             Circle(radius=FIT_BOSS_OD/2); Circle(radius=FIT_BOSS_OD/2 - WALL, mode=Mode.SUBTRACT)
         extrude(amount=INTERFACE_HEIGHT)
         
+        # 2.5 Reinforcement Flange
+        with BuildSketch(Plane.XY):
+            Circle(radius=RING_OD/2)
+            Circle(radius=FIT_BOSS_OD/2 - WALL, mode=Mode.SUBTRACT) 
+        extrude(amount=2.0)
+        
+        # 3. Top Socket (Cutout for Lid)
         with BuildSketch(Plane.XY.offset(SECTION_HEIGHT)):
             Circle(radius=FIT_SOCKET_ID/2)
         extrude(amount=-INTERFACE_HEIGHT, mode=Mode.SUBTRACT)
