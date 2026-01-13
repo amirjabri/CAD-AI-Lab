@@ -122,53 +122,41 @@ def generate_base():
         Cylinder(radius=RING_OD/2, height=base_height, align=(Align.CENTER, Align.CENTER, Align.MIN))
         
         # 2. Add Side Manifold (Spine)
-        # Adds material to the side to mount the barb
         with BuildSketch(Plane.XY):
             with Locations((RING_OD/2, 0)):
                  Rectangle(width=10.0, height=10.0, align=(Align.CENTER, Align.CENTER))
         extrude(amount=base_height)
         
-        # 3. Fillet the Manifold connection
-        # (Optional, skip for simpler geometry if needed, but looks better)
+        # 3. Add Barb Solid (Before cutting Plenum!)
+        with BuildSketch(Plane.YZ):
+            with Locations((0, barb_z)):
+                Circle(radius=barb_od_r)
+        extrude(amount=RING_OD/2 + 5.0 + 8.0).move(Location((0,0,0))) 
         
         # 4. Cut Top Socket
         with BuildSketch(Plane.XY.offset(base_height)):
             Circle(radius=fit_socket_cleaning)
         extrude(amount=-socket_depth, mode=Mode.SUBTRACT)
         
-        # 5. Cut Internal Plenum
+        # 5. Cut Internal Plenum (NOW) - Removes barb from inside
         with BuildSketch(Plane.XY.offset(seat_z)):
             Circle(radius=plenum_cleaning)
         extrude(amount=-(seat_z - 1.0), mode=Mode.SUBTRACT) # Floor at Z=1.0
         
-        # 6. Add Barb
-        # Extruding from the side spine outwards.
-        # Spine edge is at RING_OD/2 + 5.0 approx.
-        with BuildSketch(Plane.YZ):
-            with Locations((0, barb_z)):
-                Circle(radius=barb_od_r)
-        extrude(amount=RING_OD/2 + 5.0 + 8.0).move(Location((0,0,0))) # 8mm barb len
-        
-        # 7. Cut Barb Bore
+        # 6. Cut Barb Bore
         with BuildSketch(Plane.YZ):
             with Locations((0, barb_z)):
                 Circle(radius=barb_id_r)
         # Cut inward from far right
         extrude(amount=RING_OD/2 + 5.0 + 8.0 + 1.0, mode=Mode.SUBTRACT)
         
-        # 8. Connect Bore to Plenum (Internal Slot)
-        # The bore (Step 7) probably doesn't reach the plenum center if we extrude from X=0 outwards.
-        # Actually, Step 7 cuts from X=0 to X=positive.
-        # We need a cut that connects the Plenum (R=17) to the Barb start (X > 17).
-        # We will make a horizontal slot cut from the Center (X=0) outwards to the barb.
+        # 7. Connect Bore to Plenum (Slot)
         with BuildSketch(Plane.YZ):
             with Locations((0, barb_z)):
                 Circle(radius=barb_id_r)
-        extrude(amount=RING_OD/2 + 5.0, mode=Mode.SUBTRACT) # Cut from X=0 outwards
-        
-        # 9. Inverse Waffle (Square Standoffs)
-        # Sits on Floor (Z=1), height up to Seat (Z=8).
-        # Array of square posts for support + max airflow.
+        extrude(amount=RING_OD/2 + 5.0, mode=Mode.SUBTRACT) 
+
+        # 8. Inverse Waffle (Square Standoffs)
         with BuildSketch(Plane.XY.offset(1.0)):
             with GridLocations(x_spacing=5.0, y_spacing=5.0, x_count=7, y_count=7):
                  Rectangle(width=2.0, height=2.0)
