@@ -429,24 +429,27 @@ if __name__ == "__main__":
     try:
         agent = HybridCassetteAgent()
         
-        # 1. Generate Badge (v9) -> Changed to 4.0 LPM per user request
-        print("Generating Badge Hybrid (1/4'' Barb)...")
-        badge_data = agent.generate_badge_hybrid(4.0, 4.0)
-        agent.export_hybrid(badge_data)
+        # 1. Generate Badge (4.0 LPM)
+        print("Generating Badge Hybrid (4.0 LPM)...")
+        badge_4 = agent.generate_badge_hybrid(4.0, 4.0)
+        agent.export_hybrid(badge_4)
+
+        # 2. Generate Badge (2.5 LPM)
+        print("Generating Badge Hybrid (2.5 LPM)...")
+        badge_2_5 = agent.generate_badge_hybrid(2.5, 4.0)
+        agent.export_hybrid(badge_2_5)
         
         if has_viewer:
-            # Visualize Badge
-            # Show Lid slightly raised to see inside
-            lid = badge_data["top"]
-            base = badge_data["base"]
-            
+            # Visualize both side-by-side
             show(
-                base, 
-                lid.translate((0, 0, 20)), # Explode Lid up by 20mm
-                names=["Badge Base", "Badge Lid (Exploded)"],
-                colors=["#D3D3D3", "#87CEEB"] # LightGray, SkyBlue
+                badge_4["base"].move(Location((0, -40, 0))), 
+                badge_4["top"].move(Location((0, -40, 20))),
+                badge_2_5["base"].move(Location((0, 40, 0))),
+                badge_2_5["top"].move(Location((0, 40, 20))),
+                names=["Base 4.0LPM", "Lid 4.0LPM", "Base 2.5LPM", "Lid 2.5LPM"],
+                colors=["silver", "teal", "silver", "orange"] 
             )
-            logger.info(f"Sent {badge_data['metadata']['design']} models to OCP Viewer")
+            logger.info("Sent 4.0 and 2.5 LPM models to OCP Viewer")
             
     except Exception as e:
         logger.error(f"Failed: {e}")
