@@ -2,188 +2,166 @@ from build123d import *
 from viewer_setup import setup_ocp, show
 import math
 
-
-# --- 1. CONFIGURATION ---
+# --- CONFIGURATION ---
 TARGET_CUT_POINT_MICRONS = 4.0
-FLOW_RATE_LPM = 4.0
+FLOW_VARIANTS = [4.0, 2.5] # LPM
 NOZZLE_COUNT = 1
 
 # Mechanical Mating (Standard 37mm Cassette)
-FIT_BOSS_OD = 37.4      # Fits INTO standard bottom
-FIT_SOCKET_ID = 37.2    # Receives standard top
+FIT_BOSS_OD = 37.4      
+FIT_SOCKET_ID = 37.2    
 FIT_SOCKET_DEPTH = 5.0
 RING_OD = 42.0 
 WALL = 2.0
 SECTION_HEIGHT = 20.0
 INTERFACE_HEIGHT = 5.0
 
-# --- 2. PHYSICS ---
-STK_50 = 0.24 
-RHO_P = 1000
-AIR_VISCOSITY = 1.81e-5
-Q_m3s = (FLOW_RATE_LPM / 1000) / 60
-d50_m = TARGET_CUT_POINT_MICRONS * 1e-6
-numerator = 4 * RHO_P * (d50_m**2) * 1.0 * Q_m3s
-denominator = 9 * math.pi * AIR_VISCOSITY * STK_50 * NOZZLE_COUNT
-nozzle_diam_m = (numerator / denominator) ** (1/3)
-NOZZLE_DIAM_MM = nozzle_diam_m * 1000
-S_DIST = NOZZLE_DIAM_MM * 1.5
-
-print(f"--- PHYSICS ---")
-print(f"Nozzle Diameter: {NOZZLE_DIAM_MM:.3f} mm")
-print(f"Jet-to-Plate (S): {S_DIST:.3f} mm")
-
-# --- 3. GEOMETRY ---
-
-# Z Levels:
-# Z=0 is the bottom of the main ring body (Top of bottom boss).
-# Z=SECTION_HEIGHT is the top of the ring.
-# Nozzle Exit Z = CUP_FLOOR_Z + S_DIST
+# Base Geometry (Common)
 CUP_FLOOR_Z = 5.0
-CUP_RIM_HEIGHT = 8.0 # Deep cup
-CUP_RIM_Z = CUP_FLOOR_Z + CUP_RIM_HEIGHT # Z=13.0
-NOZZLE_EXIT_Z = CUP_FLOOR_Z + S_DIST
-
-# Anti-Spill Guard Dimensions
-GUARD_ID = 9.0 # Inner Diameter of the spill guard lip
+CUP_RIM_HEIGHT = 8.0 
+CUP_RIM_Z = CUP_FLOOR_Z + CUP_RIM_HEIGHT 
+GUARD_ID = 9.0 
 GUARD_HEIGHT = 2.0 
 GUARD_Z_BOTTOM = CUP_RIM_Z - GUARD_HEIGHT
-
-NOZZLE_WALL_THICK = 1.0
-NOZZLE_OUTER_DIAM = NOZZLE_DIAM_MM + (2 * NOZZLE_WALL_THICK)
 CUP_INNER_DIAM = 20.0 
 
-# A. Nozzle Insert (Extended Chimney)
-CHIMNEY_LEN = (SECTION_HEIGHT - INTERFACE_HEIGHT) - NOZZLE_EXIT_Z # 5.1mm
-BASE_THICK = 2.0 
-
-with BuildPart() as nozzle_insert:
-    # 1. Base (The part that glues to the lid)
-    Cylinder(radius=15.0/2, height=BASE_THICK)
-    # 2. Chimney (Extending down)
-    with BuildSketch(Plane.XY):
-        Circle(radius=NOZZLE_OUTER_DIAM/2)
-    extrude(amount=CHIMNEY_LEN) 
-    # Bore hole through all.
-    with BuildSketch(Plane.XY):
-        Circle(radius=NOZZLE_DIAM_MM/2)
-    extrude(amount=BASE_THICK + CHIMNEY_LEN + 1.0, mode=Mode.SUBTRACT)
-
-# B. Middle Section Components (Refactored for Press Fit)
+def calculate_physics(flow_lpm):
+    # Physics Calculation
+    STK_50 = 0.24 
+    RHO_P = 1000
+    AIR_VISCOSITY = 1.81e-5
+    Q_m3s = (flow_lpm / 1000) / 60
+    d50_m = TARGET_CUT_POINT_MICRONS * 1e-6
+    numerator = 4 * RHO_P * (d50_m**2) * 1.0 * Q_m3s
+    denominator = 9 * math.pi * AIR_VISCOSITY * STK_50 * NOZZLE_COUNT
+    nozzle_diam_m = (numerator / denominator) ** (1/3)
+    nozzle_diam_mm = nozzle_diam_m * 1000
+    s_dist = nozzle_diam_mm * 1.5
+    return nozzle_diam_mm, s_dist
 
 def generate_middle_holder():
-    # Ring that mounts to the cassette wall and holds the cup in the center.
-    # Includes: Housing Ring, Spokes, and Central Holder Ring.
-    
-    HOLDER_ID = 22.0 # ID of the central ring that receives the cup
+    # Common Part
+    HOLDER_ID = 22.0 
     HOLDER_WALL = 1.0
     HOLDER_HEIGHT = 6.0 
-    HOLDER_Z = CUP_FLOOR_Z + 2.0 # Positioned around the cup's mid-section
+    HOLDER_Z = CUP_FLOOR_Z + 2.0 
     
     with BuildPart() as holder_assy:
-        # 1. Main Housing Ring (Outer)
         with BuildSketch(Plane.XY):
-            Circle(radius=RING_OD/2)
-            Circle(radius=RING_OD/2 - WALL, mode=Mode.SUBTRACT)
+            Circle(radius=RING_OD/2); Circle(radius=RING_OD/2 - WALL, mode=Mode.SUBTRACT)
         extrude(amount=SECTION_HEIGHT)
         
-        # 2. Bottom Boss (Interface)
         with BuildSketch(Plane.XY.offset(-INTERFACE_HEIGHT)):
-            Circle(radius=FIT_BOSS_OD/2)
-            Circle(radius=FIT_BOSS_OD/2 - WALL, mode=Mode.SUBTRACT)
+            Circle(radius=FIT_BOSS_OD/2); Circle(radius=FIT_BOSS_OD/2 - WALL, mode=Mode.SUBTRACT)
         extrude(amount=INTERFACE_HEIGHT)
         
-        # 3. Top Socket (Cutout for Lid)
         with BuildSketch(Plane.XY.offset(SECTION_HEIGHT)):
             Circle(radius=FIT_SOCKET_ID/2)
         extrude(amount=-INTERFACE_HEIGHT, mode=Mode.SUBTRACT)
         
-        # 4. Central Holder Ring (Inner)
         with BuildSketch(Plane.XY.offset(HOLDER_Z)):
-            Circle(radius=HOLDER_ID/2 + HOLDER_WALL)
-            Circle(radius=HOLDER_ID/2, mode=Mode.SUBTRACT)
+            Circle(radius=HOLDER_ID/2 + HOLDER_WALL); Circle(radius=HOLDER_ID/2, mode=Mode.SUBTRACT)
         extrude(amount=HOLDER_HEIGHT)
         
-        # 5. Spokes (Connecting Holder to Housing)
-        # Create 3 spokes at 120 degrees
         spoke_th = 2.0
-        with BuildSketch(Plane.XY.offset(HOLDER_Z + 1.0)): # Slightly offset from bottom of holder
+        with BuildSketch(Plane.XY.offset(HOLDER_Z + 1.0)): 
             with PolarLocations(radius=(RING_OD/4 + HOLDER_ID/4), count=3):
-                 # Length = (RING_ID - HOLDER_OD)/2 roughly
-                 # Width needs to bridge the gap
                  Rectangle(width=(RING_OD/2 - WALL) - (HOLDER_ID/2), height=spoke_th)
         extrude(amount=4.0)
-        
     return holder_assy.part
 
 def generate_removable_cup():
-    # The actual cup that pops into the holder.
-    # OD needs to match HOLDER_ID (Press fit).
-    
-    # 0.1mm Interference for Press Fit (User request: "pop in")
-    CUP_FIT_OD = 22.1 
-    
+    # Common Part
+    CUP_FIT_OD = 22.1 # 0.1mm Interference
     with BuildPart() as cup:
-        # 1. Cup Wall
         with BuildSketch(Plane.XY.offset(CUP_FLOOR_Z)):
-            Circle(radius=CUP_FIT_OD/2) # Outer
-            Circle(radius=CUP_INNER_DIAM/2, mode=Mode.SUBTRACT) # Inner (20mm)
+            Circle(radius=CUP_FIT_OD/2); Circle(radius=CUP_INNER_DIAM/2, mode=Mode.SUBTRACT)
         extrude(amount=CUP_RIM_HEIGHT)
         
-        # 2. Cup Floor
         with BuildSketch(Plane.XY.offset(CUP_FLOOR_Z)):
              Circle(radius=CUP_FIT_OD/2)
-        extrude(amount=-1.5) # Floor thickness down
+        extrude(amount=-1.5) 
         
-        # 3. Anti-Spill Guard (Lobster Trap) - ADDED ON TOP
+        # Guard
         with BuildPart() as guard:
             with BuildSketch(Plane.XY.offset(GUARD_Z_BOTTOM)):
-                Circle(radius=CUP_INNER_DIAM/2) # OD 20
-                Circle(radius=CUP_INNER_DIAM/2 - 0.1, mode=Mode.SUBTRACT) 
+                Circle(radius=CUP_INNER_DIAM/2); Circle(radius=CUP_INNER_DIAM/2 - 0.1, mode=Mode.SUBTRACT) 
             with BuildSketch(Plane.XY.offset(CUP_RIM_Z)):
-                Circle(radius=CUP_INNER_DIAM/2) 
-                Circle(radius=GUARD_ID/2, mode=Mode.SUBTRACT) # ID 9
+                Circle(radius=CUP_INNER_DIAM/2); Circle(radius=GUARD_ID/2, mode=Mode.SUBTRACT) 
             loft()
         add(guard.part)
         
-        # 4. Handle / Grip (Bottom Tab for Removal)
+        # Handle
         with BuildSketch(Plane.XY.offset(CUP_FLOOR_Z - 1.5)):
             Rectangle(width=8.0, height=2.0)
         extrude(amount=-3.0)
-        
     return cup.part
 
+def generate_nozzle(flow_lpm):
+    d_mm, s_dist = calculate_physics(flow_lpm)
+    print(f"[{flow_lpm} LPM] Nozzle: {d_mm:.3f}mm, S: {s_dist:.3f}mm")
+    
+    NOZZLE_EXIT_Z = CUP_FLOOR_Z + s_dist
+    CHIMNEY_LEN = (SECTION_HEIGHT - INTERFACE_HEIGHT) - NOZZLE_EXIT_Z
+    BASE_THICK = 2.0
+    NOZZLE_WALL_THICK = 1.0
+    NOZZLE_OUTER_DIAM = d_mm + (2 * NOZZLE_WALL_THICK)
+    
+    with BuildPart() as nozzle:
+        Cylinder(radius=15.0/2, height=BASE_THICK)
+        with BuildSketch(Plane.XY):
+            Circle(radius=NOZZLE_OUTER_DIAM/2)
+        extrude(amount=CHIMNEY_LEN) 
+        with BuildSketch(Plane.XY):
+            Circle(radius=d_mm/2)
+        extrude(amount=BASE_THICK + CHIMNEY_LEN + 1.0, mode=Mode.SUBTRACT)
+        
+    return nozzle.part
 
-# --- 4. EXPORT & VIEW ---
 if __name__ == "__main__":
     try:
         setup_ocp()
         
+        # Common Parts
         holder = generate_middle_holder()
         cup = generate_removable_cup()
-        nozzle = nozzle_insert.part.rotate(Axis.X, 180).move(Location((0,0, SECTION_HEIGHT - INTERFACE_HEIGHT + BASE_THICK)))
         
-        # Visualize Assembled
-        # Cup is already modeled in position (Z=5)
-        # Holder is modeled in position
+        export_stl(holder, "impactor_holder_ring_common.stl")
+        export_stl(cup, "impactor_removable_cup_common.stl")
         
-        show(
-            holder, 
-            cup, 
-            nozzle, 
-            names=["Cassette_Holder", "PopIn_Cup", "Nozzle"], 
-            colors=["silver", "red", "teal"]
-        )
+        # Show Common (Center)
+        show(holder, cup, names=["Common_Holder", "Common_Cup"], colors=["silver", "red"])
         
-        print("Visualizing Press-Fit Cup Assembly.")
-        
-        export_stl(holder, "impactor_holder_ring.stl")
-        export_stl(cup, "impactor_removable_cup.stl")
-        export_stl(nozzle_insert.part, "impactor_nozzle.stl")
+        # Variants
+        offset_x = 0
+        for flow in FLOW_VARIANTS:
+            nozzle = generate_nozzle(flow)
+            
+            # Orient Nozzle for assembly view (Flip and Move)
+            nozzle_vis = nozzle.rotate(Axis.X, 180).move(Location((offset_x, 0, SECTION_HEIGHT - INTERFACE_HEIGHT + 2.0)))
+            
+            # Show ghost holder/cup for context at offset?
+            if offset_x != 0:
+                 # Group them for a single show call per variant location to avoid overwriting or confusion
+                 show(
+                    holder.move(Location((offset_x, 0, 0))),
+                    cup.move(Location((offset_x, 0, 0))), 
+                    nozzle_vis,
+                    names=[f"Holder_{flow}", f"Cup_{flow}", f"Nozzle_{flow}LPM"],
+                    colors=["silver", "red", "teal"]
+                 )
+            else:
+                 # At 0,0, just add the nozzle to the existing view
+                 show(nozzle_vis, names=[f"Nozzle_{flow}LPM"], colors=["teal"])
+            
+            # Export
+            export_stl(nozzle, f"impactor_nozzle_{flow}LPM.stl")
+
+            offset_x += 60 # Move next one over
+            
+        print("Batch Generation Complete.")
         
     except Exception as e:
         print(f"Error: {e}")
         import traceback
         traceback.print_exc()
-        
-    print("Files Exported")
