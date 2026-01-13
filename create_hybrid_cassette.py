@@ -2,6 +2,7 @@ import logging
 import os
 import math
 from build123d import *
+from viewer_setup import setup_ocp, show
 from agent_engine import AgenticCADSystem
 from config import MINIATURE_25MM
 from templates import CADTemplates
@@ -414,10 +415,11 @@ class HybridCassetteAgent(AgenticCADSystem):
 
 if __name__ == "__main__":
     try:
-        from ocp_vscode import show, set_port, Camera, set_defaults
-        set_port(3939)
-        set_defaults(reset_camera=Camera.RESET)
-        has_viewer = True
+        if not setup_ocp():
+             logger.warning("Viewer setup failed, proceeding with generation only.")
+             has_viewer = False
+        else:
+             has_viewer = True
     except ImportError:
         has_viewer = False
         logger.warning("OCP Viewer not available")
@@ -425,8 +427,9 @@ if __name__ == "__main__":
     try:
         agent = HybridCassetteAgent()
         
-        # 1. Generate Badge (v9)
-        badge_data = agent.generate_badge_hybrid(0.8, 4.0)
+        # 1. Generate Badge (v9) -> Changed to 4.0 LPM per user request
+        print("Generating Badge Hybrid for 4.0 LPM...")
+        badge_data = agent.generate_badge_hybrid(4.0, 4.0)
         agent.export_hybrid(badge_data)
         
         if has_viewer:
