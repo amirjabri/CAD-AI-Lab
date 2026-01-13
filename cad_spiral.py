@@ -102,8 +102,8 @@ def generate_cover():
     return cover.part
 
 def generate_base():
-    # v33: Compact 8mm Height + Center Extension.
-    base_height = 8.0
+    # v33: Compact 8mm Height -> v55: 13.0mm Height for 1/4" Barb
+    base_height = 13.0
     socket_depth = 5.0
     seat_z = base_height - socket_depth # Z = 3.0
     fit_socket_cleaning = FIT_BOSS_OD/2 + 0.1 
@@ -118,8 +118,10 @@ def generate_base():
         # Intersects with Main Block.
         # Will be carved out by Socket/Plenum cuts later.
         
-        barb_flow_z = (seat_z + 1.0) / 2 # Z = 2.0
-        barb_od_r = INLET_DIAMETER/2 + 1.5 # 4.5mm
+        barb_flow_z = (seat_z + 1.0) / 2 # Z = 2.0 -> Z = 4.5
+        # v55: 1/4" Barb (6.5mm OD)
+        barb_od_r = 6.5 / 2 # 3.25mm
+        barb_id_r = 4.0 / 2 # 2.0mm (ID 4mm)
         
         with BuildSketch(Plane.YZ): # X=0 Plane
             with Locations((0, barb_flow_z)):
@@ -160,7 +162,7 @@ def generate_base():
         
         # 7. Barb Bore (Hole)
         with BuildSketch(Plane.YZ.offset(RING_OD/2 + 5.0 + BARB_HEIGHT)):
-            Circle(radius=INLET_DIAMETER/2)
+            Circle(radius=barb_id_r)
         extrude(amount=-(BARB_HEIGHT), mode=Mode.SUBTRACT).move(Location((0,0,barb_flow_z)))
         
         # 8. Internal Slot Cut
@@ -172,8 +174,9 @@ def generate_base():
         # We just need to connect the Barb Bore to the Plenum.
         # The Bore is at X ~ 26.
         # We need a cut from X=26 inward to X=17 (Plenum wall).
+        # We need a cut from X=26 inward to X=17 (Plenum wall).
         with BuildSketch(Plane.YZ.offset(RING_OD/2 + 5.0)):
-             Rectangle(width=INLET_DIAMETER * 2 - 2.0, height=seat_z - 1.0 - 0.4)
+             Rectangle(width=barb_id_r * 2, height=seat_z - 1.0 - 0.4)
         extrude(amount=-(5.0 + 2.0 + RING_OD/2), mode=Mode.SUBTRACT).move(Location((0,0,barb_flow_z)))
         
     return base.part
