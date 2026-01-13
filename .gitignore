@@ -1,0 +1,10 @@
+__pycache__/
+venv/
+.venv/
+.vscode/
+generated_impactors/
+output/
+iterations/
+*.stl
+*.step
+*.log

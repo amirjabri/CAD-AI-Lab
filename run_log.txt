@@ -1,0 +1,12 @@
+UserWarning: The viewer doesn't seem to run: [Errno 111] Connection refused
+--- PHYSICS ---
+Nozzle Diameter: 3.263 mm
+Jet-to-Plate (S): 4.894 mm
+
+Z Levels:
+Top Socket Floor: 15.0
+Cup Rim: 13.0
+Nozzle Exit: 9.894332060494847
+Cup Floor: 5.0
+
+Files Exported
