@@ -335,9 +335,10 @@ class HybridCassetteAgent(AgenticCADSystem):
             extrude(amount=1.0, mode=Mode.SUBTRACT) # Leaves 1mm roof (Total Lid H=5, cut up to 4)
             
             # 5. Support-Free Circular Barb (v34 Refined)
-            barb_od = 4.5
-            barb_id = 2.0
-            barb_len = 5.0
+            # Updated for 1/4" tubing and low resistance (v35.2)
+            barb_od = 6.5 # Approx 1/4" (6.35mm) with stretch fit
+            barb_id = 4.0 # Large bore for low resistance
+            barb_len = 8.0 # Longer for security
             barb_z = 2.5 # Mid-height for hose alignment
             
             with BuildPart() as barb:
@@ -429,7 +430,7 @@ if __name__ == "__main__":
         agent = HybridCassetteAgent()
         
         # 1. Generate Badge (v9) -> Changed to 4.0 LPM per user request
-        print("Generating Badge Hybrid (Support Pad Ready)...")
+        print("Generating Badge Hybrid (1/4'' Barb)...")
         badge_data = agent.generate_badge_hybrid(4.0, 4.0)
         agent.export_hybrid(badge_data)
         
