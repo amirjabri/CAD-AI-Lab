@@ -392,7 +392,10 @@ class HybridCassetteAgent(AgenticCADSystem):
             "top": top_part,
             "base": base_part,
             "physics": constraints,
-            "metadata": { "design": "v35_optimized_grid" }
+            "metadata": { 
+                "design": "v35_optimized_grid",
+                "nozzle_diam": d_mm 
+            }
         }
 
 
@@ -432,11 +435,15 @@ if __name__ == "__main__":
         # 1. Generate Badge (4.0 LPM)
         print("Generating Badge Hybrid (4.0 LPM)...")
         badge_4 = agent.generate_badge_hybrid(4.0, 4.0)
+        badge_4["metadata"]["design"] = "v35_optimized_grid_4LPM" # Unique folder
+        print(f"  > 4.0 LPM Nozzle Diameter: {badge_4['metadata']['nozzle_diam']:.4f} mm")
         agent.export_hybrid(badge_4)
 
         # 2. Generate Badge (2.5 LPM)
         print("Generating Badge Hybrid (2.5 LPM)...")
         badge_2_5 = agent.generate_badge_hybrid(2.5, 4.0)
+        badge_2_5["metadata"]["design"] = "v35_optimized_grid_2.5LPM" # Unique folder
+        print(f"  > 2.5 LPM Nozzle Diameter: {badge_2_5['metadata']['nozzle_diam']:.4f} mm")
         agent.export_hybrid(badge_2_5)
         
         if has_viewer:
