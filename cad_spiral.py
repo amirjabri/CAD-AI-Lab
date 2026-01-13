@@ -101,49 +101,51 @@ def generate_cover():
         extrude(amount=cover_thickness, mode=Mode.SUBTRACT)
     return cover.part
 
-    # v55 Refactor: Central Axial Barb (Downward)
-    base_height = 10.0 # Reduced from 13, slightly taller than 8 for stability
+def generate_base():
+    # v56 Refactor: Flat Circular Base (Simple Puck)
+    # No protruding barb, just a central hole.
+    
+    base_height = 10.0 
     socket_depth = 5.0
     seat_z = base_height - socket_depth # Z = 5.0
+    
     fit_socket_cleaning = FIT_BOSS_OD/2 + 0.1 
     plenum_cleaning = 34.0/2 
-
-    # Barb Dims
-    barb_od_r = 6.5 / 2
-    barb_id_r = 4.0 / 2
-    barb_len = 8.0 # Standard length
+    
+    # Exit Hole Dims (1/4" OD clearance? or ID?)
+    # User asked for "1/4 inch barb in the middle" before, but now "no holes".
+    # We will provide a 6.35mm (1/4") hole which fits standard tubing/fittings.
+    exit_hole_r = 6.35 / 2 
 
     with BuildPart() as base:
-        # 1. Main Block
+        # 1. Main Block (Solid Cylinder)
         Cylinder(radius=RING_OD/2, height=base_height, align=(Align.CENTER, Align.CENTER, Align.MIN))
         
-        # 2. Cut Top Socket (Receiver)
+        # 2. Cut Top Socket (Receiver for Body)
+        # Sits at the top (Z=10), goes down 5mm.
         with BuildSketch(Plane.XY.offset(base_height)):
             Circle(radius=fit_socket_cleaning)
         extrude(amount=-socket_depth, mode=Mode.SUBTRACT)
         
-        # 3. Cut Lower Plenum (Collector)
+        # 3. Cut Internal Plenum (Collector)
+        # Sits at Seat Level (Z=5), goes down to Floor (Z=1).
+        # Floor thickness = 1.0mm
         with BuildSketch(Plane.XY.offset(seat_z)):
             Circle(radius=plenum_cleaning)
         extrude(amount=-(seat_z - 1.0), mode=Mode.SUBTRACT)
         
-        # 4. Add Central Barb (Downward)
-        with BuildSketch(Plane.XY):
-            Circle(radius=barb_od_r)
-        extrude(amount=-barb_len, dir=(0,0,-1)) # Extrude downwards
-        
-        # 5. Barb Bore (Through Hole to Plenum)
-        # From Z=1.0 (Plenum Floor) down through Barb
+        # 4. Cut Central Exit Hole (Through Floor)
+        # Goes from Floor (Z=1) down to Bottom (Z=0).
         with BuildSketch(Plane.XY.offset(1.0)):
-            Circle(radius=barb_id_r)
-        extrude(amount=-(1.0 + barb_len), mode=Mode.SUBTRACT)
+            Circle(radius=exit_hole_r)
+        extrude(amount=-(1.0 + 1.0), mode=Mode.SUBTRACT) # Cut through bottom
         
-        # 6. Add Ribs (Support Grid)
-        # Must avoid the central hole
+        # 5. Add Ribs (Support for Filter Disk)
+        # Sits on Floor (Z=1), height up to Seat (Z=5).
         with BuildSketch(Plane.XY.offset(1.0)):
             Rectangle(width=plenum_cleaning*2, height=1.0)
             Rectangle(width=1.0, height=plenum_cleaning*2)
-            Circle(radius=barb_id_r + 0.5, mode=Mode.SUBTRACT) # Clear barb hole
+            Circle(radius=exit_hole_r + 0.5, mode=Mode.SUBTRACT) # Clear extraction hole
         extrude(amount=(seat_z - 1.0))
         
     return base.part
