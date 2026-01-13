@@ -37,7 +37,7 @@ def setup_ocp(port=3939, log_level=logging.ERROR):
     ocp_vscode.config.status = patched_status
     # --- MONKEY PATCH END ---
 
-    # --- MONKEY PATCH END ---
+
 
     # Configure multiple ports
     # 3939 = IDE Extension
@@ -80,5 +80,6 @@ def show(*args, **kwargs):
         try:
              set_port(p)
              original_show(*args, **kwargs)
-        except Exception:
-             pass
+             print(f"Sent to port {p}")
+        except Exception as e:
+             print(f"Failed to send to port {p}: {e}")
