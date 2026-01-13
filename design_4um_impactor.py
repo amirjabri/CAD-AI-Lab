@@ -1,30 +1,7 @@
 from build123d import *
-from ocp_vscode import show, set_port, set_defaults, Camera
+from ocp_vscode import show
 import math
-import ocp_vscode.config
-import ocp_vscode.comms
-
-# --- MONKEY PATCH START ---
-original_send_command = ocp_vscode.comms.send_command
-def patched_send_command(*args, **kwargs):
-    try:
-        result = original_send_command(*args, **kwargs)
-        if isinstance(result, str) and result.strip() == "{}":
-            return {}
-        return result
-    except Exception:
-        return {}
-
-ocp_vscode.comms.send_command = patched_send_command
-
-original_status = ocp_vscode.config.status
-def patched_status(*args, **kwargs):
-    try:
-        return original_status(*args, **kwargs)
-    except Exception:
-        return {}
-ocp_vscode.config.status = patched_status
-# --- MONKEY PATCH END ---
+from viewer_setup import setup_ocp
 
 # --- 1. CONFIGURATION ---
 TARGET_CUT_POINT_MICRONS = 4.0
@@ -233,9 +210,7 @@ with BuildPart() as middle_section:
 # --- EXPORT ---
 if __name__ == "__main__":
     try:
-        from ocp_vscode import set_port
-        set_port(3939)
-        set_defaults(reset_camera=Camera.RESET)
+        setup_ocp()
         
         # VISUAL ASSEMBLY
         
