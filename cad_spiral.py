@@ -166,10 +166,16 @@ def generate_base():
                 Circle(radius=barb_id_r)
         extrude(amount=RING_OD/2 + 5.0, mode=Mode.SUBTRACT) # Cut from X=0 outwards
         
-        # 9. Ribs
+        # 9. Waffle Pattern Ribs (Support Grid)
+        # Sits on Floor (Z=1), height up to Seat (Z=8).
+        # Provides support for cellulose pad while allowing flow.
         with BuildSketch(Plane.XY.offset(1.0)):
-            Rectangle(width=plenum_cleaning*2, height=1.0)
-            Rectangle(width=1.0, height=plenum_cleaning*2)
+            # Vertical Ribs
+            with GridLocations(x_spacing=5.0, y_spacing=0, x_count=7, y_count=1):
+                 Rectangle(width=1.0, height=plenum_cleaning*2 + 2.0)
+            # Horizontal Ribs
+            with GridLocations(x_spacing=0, y_spacing=5.0, x_count=1, y_count=7):
+                 Rectangle(width=plenum_cleaning*2 + 2.0, height=1.0)
         extrude(amount=(seat_z - 1.0))
 
     return base.part
