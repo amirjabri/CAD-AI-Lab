@@ -1,7 +1,7 @@
 from build123d import *
-from ocp_vscode import show
+from viewer_setup import setup_ocp, show
 import math
-from viewer_setup import setup_ocp
+
 
 # --- 1. CONFIGURATION ---
 TARGET_CUT_POINT_MICRONS = 4.0

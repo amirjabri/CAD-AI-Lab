@@ -1,7 +1,8 @@
 import logging
 import ocp_vscode.config
 import ocp_vscode.comms
-from ocp_vscode import set_port, set_defaults, Camera, show
+from ocp_vscode import set_port, set_defaults, Camera, show as original_show
+import ocp_vscode
 
 def setup_ocp(port=3939, log_level=logging.ERROR):
     """
@@ -36,12 +37,48 @@ def setup_ocp(port=3939, log_level=logging.ERROR):
     ocp_vscode.config.status = patched_status
     # --- MONKEY PATCH END ---
 
-    # Set Defaults
-    try:
-        set_port(port)
-        set_defaults(reset_camera=Camera.RESET)
-        print(f"OCP Viewer configured on port {port} (patched).")
-        return True
-    except Exception as e:
-        print(f"Failed to configure OCP Viewer: {e}")
-        return False
+    # --- MONKEY PATCH END ---
+
+    # Configure multiple ports
+    # 3939 = IDE Extension
+    # 3940 = Standalone Web Viewer
+    ports = [3939, 3940]
+    
+    # Broadcast 'show' wrapper
+    def broadcast_show(*args, **kwargs):
+        for p in ports:
+            try:
+                set_port(p)
+                # Only force camera reset on the first call or maybe both?
+                # set_defaults(reset_camera=Camera.RESET) 
+                original_show(*args, **kwargs)
+                print(f"Sent to port {p}")
+            except Exception as e:
+                print(f"Failed to send to port {p}: {e}")
+                
+    # Direct Monkey Patch of ocp_vscode.show provided it was imported AFTER this runs?
+    # No, ocp_vscode.show is a function. We can swap it in the module.
+    ocp_vscode.show = broadcast_show
+    # Also update the imported reference in sys.modules if needed, but mainly for the user script
+    # The user script imports 'show' from 'ocp_vscode'.
+    # If they imported it BEFORE calling setup_ocp, they have the old reference.
+    # We should return the new show or tell them to import it from here.
+    # BETTER: In design_4um_impactor, import show from viewer_setup OR just rely on the patch 
+    # IF we change the import in design_4um_impactor to `import ocp_vscode` and use `ocp_vscode.show`.
+    # BUT, to be least intrusive, let's just use the `setup_ocp` to return the new show function?
+    
+    # Actually, simpler: in design_4um_impactor.py, we can just call `viewer_setup.show`?
+    # Let's just make `viewer_setup` expose a `show` that does this, and update design_4um_impactor to use it.
+    
+    return True
+
+def show(*args, **kwargs):
+    # This is the function exposed by this module
+    # It will assume setup_ocp has been called or just loop the ports itself.
+    ports = [3939, 3940]
+    for p in ports:
+        try:
+             set_port(p)
+             original_show(*args, **kwargs)
+        except Exception:
+             pass
