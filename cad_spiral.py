@@ -16,7 +16,8 @@ FLOW_VARIANTS = [
     (2.0, 5.0),
     (2.5, 6.25),
     (3.0, 7.5),
-    (3.5, 8.75)
+    (3.5, 8.75),
+    (4.0, 10.0) # Added per user request
 ]
 
 # Cassette Interfaces
@@ -220,11 +221,11 @@ def export_batch():
 if __name__ == "__main__":
     try:
         setup_ocp()
-        # Show one example (2.0 LPM)
-        b = generate_body(5.0)
+        # Show 4.0 LPM (Height 10.0) based on user request
+        b = generate_body(10.0)
         c = generate_cover()
         base = generate_base()
-        show(b.move(Location((0,0,10))), c.move(Location((0,0,17))), base, names=["Body_2LPM", "Cover", "Base"], colors=["teal", "yellow", "silver"])
+        show(b.move(Location((0,0,10))), c.move(Location((0,0,17+5))), base, names=["Body_4LPM", "Cover", "Base"], colors=["teal", "yellow", "silver"])
     except: pass
     export_batch()
 
