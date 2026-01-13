@@ -12,12 +12,13 @@ TURNS = 2.5
 # Flow Variants: (Flow LPM, Height mm)
 # Ratio: 10mm / 4.0LPM = 2.5 mm/LPM
 FLOW_VARIANTS = [
-    (1.5, 3.75),
-    (2.0, 5.0),
     (2.5, 6.25),
-    (3.0, 7.5),
-    (3.5, 8.75),
-    (4.0, 10.0) # Added per user request
+    (4.0, 10.0)
+    # (Other variants commented out for focus)
+    # (1.5, 3.75),
+    # (2.0, 5.0),
+    # (3.0, 7.5),
+    # (3.5, 8.75),
 ]
 
 # Cassette Interfaces
@@ -207,11 +208,33 @@ def export_batch():
 if __name__ == "__main__":
     try:
         setup_ocp()
-        # Show 4.0 LPM (Height 10.0) based on user request
-        b = generate_body(10.0)
-        c = generate_cover()
+        
+        # Generate 4.0 LPM (H=10.0)
+        body_4 = generate_body(10.0)
+        
+        # Generate 2.5 LPM (H=6.25)
+        body_2_5 = generate_body(6.25)
+        
         base = generate_base()
-        show(b.move(Location((0,0,10))), c.move(Location((0,0,17+5))), base, names=["Body_4LPM", "Cover", "Base"], colors=["teal", "yellow", "silver"])
-    except: pass
-    export_batch()
+        cover = generate_cover()
+        
+        # Show Side-by-Side
+        # 4.0 LPM at (0,0) (Teal)
+        show(body_4.move(Location((0,0,10))), "Body_4LPM", options={"color": "teal", "alpha": 0.5}, port=3939)
+        
+        # 2.5 LPM at (X=50,0) (Orange)
+        show(body_2_5.move(Location((50,0,10))), "Body_2.5LPM", options={"color": "orange", "alpha": 0.5}, port=3939)
+        
+        # Bases for both
+        show(base, "Base_4LPM", options={"color": "silver"}, port=3939)
+        show(base.move(Location((50,0,0))), "Base_2.5LPM", options={"color": "silver"}, port=3939)
+        
+        # Covers
+        show(cover.move(Location((0,0,25))), "Cover_4LPM", options={"color": "yellow", "alpha": 0.8}, port=3939)
+        show(cover.move(Location((50,0,25))), "Cover_2.5LPM", options={"color": "yellow", "alpha": 0.8}, port=3939)
+
+        print("\nVisualizing:\n - 4.0 LPM (Teal)\n - 2.5 LPM (Orange)")
+        export_batch()
+    except Exception as e:
+        print(e)
 
