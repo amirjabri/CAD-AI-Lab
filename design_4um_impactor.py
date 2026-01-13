@@ -112,8 +112,14 @@ def generate_nozzle(flow_lpm):
     NOZZLE_EXIT_Z = CUP_FLOOR_Z + s_dist
     CHIMNEY_LEN = (SECTION_HEIGHT - INTERFACE_HEIGHT) - NOZZLE_EXIT_Z
     BASE_THICK = 2.0
-    NOZZLE_WALL_THICK = 1.0
-    NOZZLE_OUTER_DIAM = d_mm + (2 * NOZZLE_WALL_THICK)
+    
+    # User Request: Fixed 4.0mm Outer Diameter for compatibility/compactness
+    NOZZLE_OUTER_DIAM = 4.0 
+    
+    # Check Wall Thickness
+    wall_thick = (NOZZLE_OUTER_DIAM - d_mm) / 2
+    if wall_thick < 0.3:
+        print(f"WARNING: Nozzle wall is extremely thin ({wall_thick:.3f}mm)! Might break.")
     
     with BuildPart() as nozzle:
         Cylinder(radius=15.0/2, height=BASE_THICK)
