@@ -140,6 +140,16 @@ if __name__ == "__main__":
         holder = generate_middle_holder()
         cup = generate_removable_cup()
         
+        # Calculate Weight
+        vol_mm3 = cup.volume
+        density_pla = 1.24 # g/cm3
+        weight_pla = (vol_mm3 * density_pla) / 1000.0
+        print(f"\n--- CUP WEIGHT ---")
+        print(f"Volume: {vol_mm3:.2f} mm^3")
+        print(f"Weight (PLA): {weight_pla:.3f} grams")
+        print(f"Weight (Resin ~1.15): {(vol_mm3*1.15)/1000.0:.3f} grams")
+        print(f"------------------\n")
+        
         export_stl(holder, "impactor_holder_ring_common.stl")
         export_stl(cup, "impactor_removable_cup_common.stl")
         
