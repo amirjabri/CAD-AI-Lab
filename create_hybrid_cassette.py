@@ -313,25 +313,26 @@ class HybridCassetteAgent(AgenticCADSystem):
             # 1. (Receiver Socket removed in v20)
             
             # 2. Primary 25mm PVC Seat
-            # Z=0 to 1.5. Uses 25.4mm for easy drop-in.
+            # Z=0 to 2.5. Deepened for Cellulose Support Pad (v35.1)
+            # Gap = 2.5 - 1.55 (Pinch) = 0.95mm for 1.0mm Stack.
             with BuildSketch(Plane.XY):
                 with Locations((filter_x, 0)):
                     Circle(radius=25.4/2)
-            extrude(amount=1.5, mode=Mode.SUBTRACT) 
+            extrude(amount=2.5, mode=Mode.SUBTRACT) 
 
-            # 3. Grid Support at Z=1.5 to 2.0 (v35 Optimized for Airflow)
-            with BuildSketch(Plane.XY.offset(1.5)):
+            # 3. Grid Support at Z=2.5 to 3.0 (Shifted up 1.0mm)
+            with BuildSketch(Plane.XY.offset(2.5)):
                 with Locations((filter_x, 0)):
                     with PolarLocations(radius=7.5, count=6):
                         Circle(radius=3.0)
                     Circle(radius=3.0)
             extrude(amount=0.5, mode=Mode.SUBTRACT)
             
-            # 4. Outlet Plenum (Z=2.0 to 4.0)
-            with BuildSketch(Plane.XY.offset(2.0)):
+            # 4. Outlet Plenum (Z=3.0 to 4.0)
+            with BuildSketch(Plane.XY.offset(3.0)):
                 with Locations((filter_x, 0)):
                     Circle(radius=22.0/2)
-            extrude(amount=2.0, mode=Mode.SUBTRACT) # Leaves 1mm roof
+            extrude(amount=1.0, mode=Mode.SUBTRACT) # Leaves 1mm roof (Total Lid H=5, cut up to 4)
             
             # 5. Support-Free Circular Barb (v34 Refined)
             barb_od = 4.5
@@ -428,7 +429,7 @@ if __name__ == "__main__":
         agent = HybridCassetteAgent()
         
         # 1. Generate Badge (v9) -> Changed to 4.0 LPM per user request
-        print("Generating Badge Hybrid for 4.0 LPM...")
+        print("Generating Badge Hybrid (Support Pad Ready)...")
         badge_data = agent.generate_badge_hybrid(4.0, 4.0)
         agent.export_hybrid(badge_data)
         
