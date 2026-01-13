@@ -238,6 +238,8 @@ if __name__ == "__main__":
             names=["Spoked_Middle_Section", "Nozzle_Extension"],
             colors=["teal", "red"]
         )
+        import time
+        time.sleep(2) # Allow time for viewer to receive data
     except Exception as e:
         print(f"Error communicating with OCP Viewer: {e}")
         import traceback
