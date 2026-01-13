@@ -102,52 +102,76 @@ def generate_cover():
     return cover.part
 
 def generate_base():
-    # v56 Refactor: Flat Circular Base (Simple Puck)
-    # No protruding barb, just a central hole.
+    # v58 Refactor: Side Barb (13mm Base)
+    # 1/4" Barb (6.5mm OD) on the side. Solid bottom.
     
-    base_height = 10.0 
+    base_height = 13.0 
     socket_depth = 5.0
-    seat_z = base_height - socket_depth # Z = 5.0
+    seat_z = base_height - socket_depth # Z = 8.0
     
     fit_socket_cleaning = FIT_BOSS_OD/2 + 0.1 
     plenum_cleaning = 34.0/2 
     
-    # Exit Hole Dims (1/4" OD clearance? or ID?)
-    # User asked for "1/4 inch barb in the middle" before, but now "no holes".
-    # We will provide a 6.35mm (1/4") hole which fits standard tubing/fittings.
-    exit_hole_r = 6.35 / 2 
-
+    # 1/4" Barb
+    barb_od_r = 6.5 / 2
+    barb_id_r = 4.0 / 2
+    barb_z = seat_z / 2 # Center barb at Z = 4.0
+    
     with BuildPart() as base:
         # 1. Main Block (Solid Cylinder)
         Cylinder(radius=RING_OD/2, height=base_height, align=(Align.CENTER, Align.CENTER, Align.MIN))
         
-        # 2. Cut Top Socket (Receiver for Body)
-        # Sits at the top (Z=10), goes down 5mm.
+        # 2. Add Side Manifold (Spine)
+        # Adds material to the side to mount the barb
+        with BuildSketch(Plane.XY):
+            with Locations((RING_OD/2, 0)):
+                 Rectangle(width=10.0, height=10.0, align=(Align.CENTER, Align.CENTER))
+        extrude(amount=base_height)
+        
+        # 3. Fillet the Manifold connection
+        # (Optional, skip for simpler geometry if needed, but looks better)
+        
+        # 4. Cut Top Socket
         with BuildSketch(Plane.XY.offset(base_height)):
             Circle(radius=fit_socket_cleaning)
         extrude(amount=-socket_depth, mode=Mode.SUBTRACT)
         
-        # 3. Cut Internal Plenum (Collector)
-        # Sits at Seat Level (Z=5), goes down to Floor (Z=1).
-        # Floor thickness = 1.0mm
+        # 5. Cut Internal Plenum
         with BuildSketch(Plane.XY.offset(seat_z)):
             Circle(radius=plenum_cleaning)
-        extrude(amount=-(seat_z - 1.0), mode=Mode.SUBTRACT)
+        extrude(amount=-(seat_z - 1.0), mode=Mode.SUBTRACT) # Floor at Z=1.0
         
-        # 4. Cut Central Exit Hole (Through Floor)
-        # Goes from Floor (Z=1) down to Bottom (Z=0).
-        with BuildSketch(Plane.XY.offset(1.0)):
-            Circle(radius=exit_hole_r)
-        extrude(amount=-(1.0 + 1.0), mode=Mode.SUBTRACT) # Cut through bottom
+        # 6. Add Barb
+        # Extruding from the side spine outwards.
+        # Spine edge is at RING_OD/2 + 5.0 approx.
+        with BuildSketch(Plane.YZ):
+            with Locations((0, barb_z)):
+                Circle(radius=barb_od_r)
+        extrude(amount=RING_OD/2 + 5.0 + 8.0).move(Location((0,0,0))) # 8mm barb len
         
-        # 5. Add Ribs (Support for Filter Disk)
-        # Sits on Floor (Z=1), height up to Seat (Z=5).
+        # 7. Cut Barb Bore
+        with BuildSketch(Plane.YZ):
+            with Locations((0, barb_z)):
+                Circle(radius=barb_id_r)
+        # Cut inward from far right
+        extrude(amount=RING_OD/2 + 5.0 + 8.0 + 1.0, mode=Mode.SUBTRACT)
+        
+        # 8. Connect Bore to Plenum (Internal Slot)
+        # The bore (Step 7) probably doesn't reach the plenum center if we extrude from X=0 outwards.
+        # Actually, Step 7 cuts from X=0 to X=positive.
+        # We need a cut that connects the Plenum (R=17) to the Barb start (X > 17).
+        # We will make a horizontal slot cut from the Center (X=0) outwards to the barb.
+        with BuildSketch(Plane.YZ):
+            with Locations((0, barb_z)):
+                Circle(radius=barb_id_r)
+        extrude(amount=RING_OD/2 + 5.0, mode=Mode.SUBTRACT) # Cut from X=0 outwards
+        
+        # 9. Ribs
         with BuildSketch(Plane.XY.offset(1.0)):
             Rectangle(width=plenum_cleaning*2, height=1.0)
             Rectangle(width=1.0, height=plenum_cleaning*2)
-            Circle(radius=exit_hole_r + 0.5, mode=Mode.SUBTRACT) # Clear extraction hole
         extrude(amount=(seat_z - 1.0))
-        
+
     return base.part
 
 # --- EXPORT ---
